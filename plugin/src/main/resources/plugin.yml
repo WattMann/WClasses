@@ -1,0 +1,6 @@
+name: 'WClasses'
+main: 'eu.warfaremc.wclasses.WClassesPlugin'
+api-version: 1.16
+version: 1.0
+author: WattMann
+database: true
