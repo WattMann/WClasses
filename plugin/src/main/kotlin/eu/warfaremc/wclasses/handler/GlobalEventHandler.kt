@@ -68,7 +68,7 @@ class GlobalEventHandler : Listener {
                         report(source , "§7Calculated holy-smite dmg change from §a${(entity as LivingEntity).health.format(2)}§7HP -> §a${((entity as LivingEntity).health * 0.05).format(2)}")
                         damage += (entity as LivingEntity).health * 0.05 //TODO cfg
                         source.sendActionBar(Component.text("§eHoly-smite §7aktivován!"))
-                        (source ).playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                        (source ).playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
                     }
                 }
                 WClassesAPI.HeroObject.HeroClass.NECROMANCER -> {
@@ -76,7 +76,7 @@ class GlobalEventHandler : Listener {
                         val original = (source as LivingEntity).health
                         (source as LivingEntity).health = if((source as LivingEntity).health + 2 >= 20) 20.0 else (source as LivingEntity).health + 2
                         source.sendActionBar(Component.text("§eHealth steal §7aktivován!"))
-                        source.playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
+                        source.playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
                         report(source, "§7Health steal §e${original.format(2)} §7-> §e ${(source as LivingEntity).health.format(2)}")
                     }
                 }

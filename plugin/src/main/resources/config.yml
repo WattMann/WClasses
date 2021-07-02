@@ -1,7 +1,6 @@
-dmg-modifiers:
-  - "class|type|item_name|change_percent|message"
-  - ""
-
-localisation:
-  holy-smite: ""
-  life-steal: "§7Lifesteal aktivován!"
+database:
+  driver: "com.mysql.cj.jdbc.Driver"
+  server: "127.0.0.1"
+  user: "root"
+  password: "root"
+  port: 3036
