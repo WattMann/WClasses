@@ -14,9 +14,17 @@ repositories {
 }
 
 dependencies {
+    // PaperMC 1.16.5
     compileOnly "com.destroystokyo.paper:paper-api:1.16.5-R0.1-SNAPSHOT"
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    // Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.5.20"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.5.20"
+
+    // Incendo/Cloud
+    implementation "cloud.commandframework:cloud-bukkit:1.4.0"
+
+    // JetBrains/Exposed
     implementation "org.jetbrains.exposed:exposed-core:0.31.1"
     implementation "org.jetbrains.exposed:exposed-dao:0.31.1"
     implementation "org.jetbrains.exposed:exposed-jdbc:0.31.1"

@@ -4,3 +4,6 @@ database:
   user: "root"
   password: "root"
   port: 3036
+
+bonuses:
+  warrior

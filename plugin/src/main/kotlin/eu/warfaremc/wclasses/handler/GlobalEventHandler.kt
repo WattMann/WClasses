@@ -18,6 +18,11 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerItemConsumeEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 
 class GlobalEventHandler : Listener {
     companion object {
@@ -39,7 +44,10 @@ class GlobalEventHandler : Listener {
             else
                 return
         } else
-              (damager as Player)
+            if(damager is Player)
+                (damager as Player)
+            else
+                return
 
         api.get(source.uniqueId).ifPresent {
             val original = finalDamage
@@ -73,11 +81,11 @@ class GlobalEventHandler : Listener {
                 }
                 WClassesAPI.HeroObject.HeroClass.NECROMANCER -> {
                     if(Math.random() <= 0.15 && entity is Player) { //TODO cfg
-                        val original = (source as LivingEntity).health
+                        val originalHp = (source as LivingEntity).health
                         (source as LivingEntity).health = if((source as LivingEntity).health + 2 >= 20) 20.0 else (source as LivingEntity).health + 2
                         source.sendActionBar(Component.text("§eHealth steal §7aktivován!"))
                         source.playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
-                        report(source, "§7Health steal §e${original.format(2)} §7-> §e ${(source as LivingEntity).health.format(2)}")
+                        report(source, "§7Health steal §e${originalHp.format(2)} §7-> §e ${(source as LivingEntity).health.format(2)}")
                     }
                 }
                 null -> {
@@ -87,5 +95,30 @@ class GlobalEventHandler : Listener {
 
             report(source, "§7Damage §a${original.format(2)} §7-> §a${finalDamage.format(2)}")
         }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    fun PlayerJoinEvent.handle() {
+        api.get(player.uniqueId).ifPresent {
+            if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
+                player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, Int.MAX_VALUE, 0, false, false, false))
+        }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    fun PlayerQuitEvent.handle() {
+        api.get(player.uniqueId).ifPresent {
+            if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
+                player.removePotionEffect(PotionEffectType.SPEED)
+        }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    fun PlayerItemConsumeEvent.handle() {
+        if(item.type == Material.MILK_BUCKET)
+            api.get(player.uniqueId).ifPresent {
+                if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
+                    Bukkit.getScheduler().runTaskLater(instance, Runnable { player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, Int.MAX_VALUE, 0, false, false, false)) }, 25)
+            }
     }
 }
