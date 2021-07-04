@@ -1,18 +1,20 @@
 package eu.warfaremc.wclasses
 
+import eu.warfaremc.wclasses.handler.GlobalCommandHandler
 import eu.warfaremc.wclasses.handler.GlobalEventHandler
 import eu.warfaremc.wclasses.implementation.WClassesAPIStdImpl
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.concurrent.CompletableFuture
 
 lateinit var instance: WClassesPlugin
 lateinit var api: WClassesAPI
 lateinit var database: Database
 
 class WClassesPlugin : JavaPlugin() {
+
+    val initComplete = CompletableFuture<Void>()
 
     override fun onDisable() {
         GlobalEventHandler.destroy()
@@ -32,6 +34,7 @@ class WClassesPlugin : JavaPlugin() {
 
     override fun onEnable() {
         Bukkit.getScheduler().runTaskAsynchronously(this, Runnable {
+            logger.info { "Asynchronous initialization started" }
             val beginTimestamp = System.currentTimeMillis()
             database =
                 Database.connect(
@@ -44,8 +47,17 @@ class WClassesPlugin : JavaPlugin() {
 
             if (!::api.isInitialized)
                 api = WClassesAPIStdImpl(database)
-            logger.info { "API Initialized"}
+
+            finalize()
         })
+
+    }
+
+    private fun finalize() {
+        GlobalCommandHandler.init()
         GlobalEventHandler.make()
+
+        initComplete.complete(null)
+        logger.info { "Asynchronous initialization finished" }
     }
 }

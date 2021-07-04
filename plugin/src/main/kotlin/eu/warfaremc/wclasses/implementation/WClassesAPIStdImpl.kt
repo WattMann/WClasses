@@ -40,6 +40,7 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
                 instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
                 return@transaction null
             }
+
         } ?: return Optional.empty()
 
         return Optional.of(
@@ -51,9 +52,8 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
         val record = cache.getIfPresent(uid ?: return false) ?: return false
         transaction(database) {
             try {
-                PlayerProfiles.update {
-                    it[PlayerProfiles.uid] = record.uid.toString()
-                    it[PlayerProfiles.`class`] = record.heroClass
+                PlayerProfiles.update ({ PlayerProfiles.uid eq record.uid.toString()}) {
+                    it[`class`] = record.heroClass
                 }
             } catch (ex: Exception) {
                 instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
@@ -62,23 +62,44 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
         return true
     }
 
+    override fun put(`object`: WClassesAPI.HeroObject?): Boolean {
+        if(`object` == null)
+            return false
+
+        cache.put(`object`.uid, `object`);
+
+        transaction(database) {
+            try {
+                PlayerProfiles.update ({ PlayerProfiles.uid eq `object`.uid.toString()}) {
+                    it[`class`] = `object`.heroClass
+                }
+            } catch (ex: Exception) {
+                instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
+                return@transaction false
+            }
+        }
+        return true
+    }
+
     override fun putAll(): Boolean {
         val copy = cache.asMap();
+        //var result = true FIXME java.lang.NoClassDefFoundError: kotlin/jvm/internal/Ref$BooleanRef
         cache.invalidateAll()
         copy.forEach { record ->
             transaction(database) {
                 try {
                     PlayerProfiles.update {
                         it[PlayerProfiles.uid] = record.key.toString()
-                        it[PlayerProfiles.`class`] = record.value.heroClass
+                        it[`class`] = record.value.heroClass
                     }
                 } catch (ex: Exception) {
                     instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
+                    //result = false
                 }
-
             }
         }
-        return true //FIXME java.lang.NoClassDefFoundError: kotlin/jvm/internal/Ref$BooleanRef
+
+        return true
     }
 
     override fun getAll(): MutableList<WClassesAPI.HeroObject> {

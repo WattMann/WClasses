@@ -11,8 +11,11 @@ fun report(player: Player, msg: String) {
 }
 
 fun shouldReport(player: Player): Boolean {
-    return true
+    return debuggers.contains(player.uniqueId)
 }
 
 fun enableReporting(player: Player)
     = debuggers.add(player.uniqueId)
+
+fun disableReporting(player: Player)
+        = debuggers.add(player.uniqueId)

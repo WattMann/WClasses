@@ -52,27 +52,34 @@ class GlobalEventHandler : Listener {
         api.get(source.uniqueId).ifPresent {
             val original = finalDamage
 
+            api.get(entity.uniqueId).ifPresent { receiver ->
+                when (receiver.heroClass) {
+                    WClassesAPI.HeroObject.HeroClass.PALADIN -> {
+                        report(source, "§7Calculated warrior dmg protection: §a${damage * 0.02}")
+                        damage -= damage * 0.03
+                    }
+                }
+            }
+
             when (it.heroClass) {
                 WClassesAPI.HeroObject.HeroClass.WARRIOR -> {
-                    if(source.inventory.itemInMainHand.type.isSword()) {
-                        report(source , "§7Calculated warrior dmg change: §a${(damage * 0.03).format(2)}")
-                        damage += (damage * 0.03) //TODO cfg
-                    }
+                    report(source , "§7Calculated warrior dmg change: §a${(damage * 0.03).format(2)}")
+                    damage += (damage * 0.03) //TODO cfg
                 }
                 WClassesAPI.HeroObject.HeroClass.ARCHER -> {
                     if(cause == EntityDamageEvent.DamageCause.PROJECTILE && source.inventory.itemInMainHand.type == Material.BOW) {  //TODO: Off-hand check
                         report(source , "§7Calculated archer dmg change: §a${(damage * 0.1).format(2)}")
-                        damage += (damage * 0.1) // TODO cfg
+                        damage += (damage * 0.05) // TODO cfg
                     }
                 }
                 WClassesAPI.HeroObject.HeroClass.SNIPER -> {
                     if(cause == EntityDamageEvent.DamageCause.PROJECTILE && source.inventory.itemInMainHand.type == Material.CROSSBOW) {  //TODO: Off-hand check
                         report(source , "§7Calculated crossbow dmg change: §a${(damage * 0.07).format(2)}")
-                        damage += (damage * 0.07) //TODO cfg
+                        damage += (damage * 0.03) //TODO cfg
                     }
                 }
                 WClassesAPI.HeroObject.HeroClass.PALADIN -> {
-                    if(Math.random() <= 0.15) { //TODO cfg
+                    if(Math.random() <= 0.07) { //TODO cfg
                         report(source , "§7Calculated holy-smite dmg change from §a${(entity as LivingEntity).health.format(2)}§7HP -> §a${((entity as LivingEntity).health * 0.05).format(2)}")
                         damage += (entity as LivingEntity).health * 0.05 //TODO cfg
                         source.sendActionBar(Component.text("§eHoly-smite §7aktivován!"))
