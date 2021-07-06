@@ -46,7 +46,7 @@ class GlobalCommandHandler {
                 throw exception
             } finally {
                 audiences = BukkitAudiences.create(instance)
-                commandHelp = MinecraftHelp("/es help", audiences::sender, manager)
+                commandHelp = MinecraftHelp("/wcs help", audiences::sender, manager)
                 if (manager.queryCapability(CloudBukkitCapabilities.BRIGADIER))
                     manager.registerBrigadier()
                 if (manager.queryCapability(CloudBukkitCapabilities.ASYNCHRONOUS_COMPLETION))
@@ -117,7 +117,7 @@ class GlobalCommandHandler {
             §7############## Player info ################    
             §fName: §a${player.name}
             §fUUID: §a${player.uniqueId}
-            §fHeroClass: §a${it.heroClass.name}
+            §fHeroClass: §a${it.heroClass ?: "null" }
             §7###########################################  
         """.trimIndent())
         }
@@ -132,9 +132,9 @@ class GlobalCommandHandler {
         @NotNull @Argument("class") `class`: String
     ) {
         if(api.put(WClassesAPI.HeroObject(target.uniqueId, WClassesAPI.HeroObject.HeroClass.valueOf(`class`))))
-            sender.sendMessage("§fCreated new record")
+            sender.sendMessage("§fSuccess")
         else
-            sender.sendMessage("§fFailed to create new record")
+            sender.sendMessage("§fFailed to update")
     }
 
 }

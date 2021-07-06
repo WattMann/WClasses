@@ -1,6 +1,7 @@
 package eu.warfaremc.wclasses.logging
 
 import org.bukkit.entity.Player
+
 import java.util.*
 
 private val debuggers = ArrayList<UUID>()

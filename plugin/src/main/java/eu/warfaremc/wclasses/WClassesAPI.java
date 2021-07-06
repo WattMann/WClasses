@@ -1,7 +1,5 @@
 package eu.warfaremc.wclasses;
 
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface WClassesAPI {
+
     /**
      * Returns HeroObject from cache or database, this also caches the result for future use
      *
@@ -42,21 +41,30 @@ public interface WClassesAPI {
     boolean putAll();
 
     /**
-     * Fetches all data from cache.
+     * Fetches all data.
      *
      * @return {@link List<HeroObject>}
      */
     @NotNull
     List<HeroObject> getAll();
 
-    record HeroObject(UUID uid, HeroClass heroClass) {
-        public UUID uniqueID() {
+    record HeroObject(@NotNull UUID uid, @Nullable HeroClass heroClass) {
+
+        public @NotNull UUID uniqueID() {
             return uid;
         }
 
         @Override
-        public HeroClass heroClass() {
+        public @Nullable HeroClass heroClass() {
             return heroClass;
+        }
+
+        @Override
+        public String toString() {
+            return "HeroObject{" +
+                    "uid=" + uid +
+                    ", heroClass=" + heroClass +
+                    '}';
         }
 
         public enum HeroClass {

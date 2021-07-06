@@ -3,9 +3,12 @@ package eu.warfaremc.wclasses
 import eu.warfaremc.wclasses.handler.GlobalCommandHandler
 import eu.warfaremc.wclasses.handler.GlobalEventHandler
 import eu.warfaremc.wclasses.implementation.WClassesAPIStdImpl
+
 import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
+
 import org.jetbrains.exposed.sql.Database
+
 import java.util.concurrent.CompletableFuture
 
 lateinit var instance: WClassesPlugin
@@ -14,7 +17,9 @@ lateinit var database: Database
 
 class WClassesPlugin : JavaPlugin() {
 
-    val initComplete = CompletableFuture<Void>()
+    companion object {
+        @JvmStatic val initComplete = CompletableFuture<Void>()
+    }
 
     override fun onDisable() {
         GlobalEventHandler.destroy()

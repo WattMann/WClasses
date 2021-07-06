@@ -2,13 +2,17 @@ package eu.warfaremc.wclasses.implementation
 
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
+
 import eu.warfaremc.wclasses.WClassesAPI
 import eu.warfaremc.wclasses.database
 import eu.warfaremc.wclasses.instance
+
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+
 import java.lang.Exception
+import java.lang.IndexOutOfBoundsException
 import java.util.*
 
 var cache: Cache<UUID, WClassesAPI.HeroObject> = CacheBuilder.newBuilder().maximumSize(150).build()
@@ -44,34 +48,37 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
         } ?: return Optional.empty()
 
         return Optional.of(
-            WClassesAPI.HeroObject(uid, profile[PlayerProfiles.`class`])
+            WClassesAPI.HeroObject(uid, profile[PlayerProfiles.heroClass])
         ).also { cache.put(uid, it.get()) }
     }
 
     override fun put(uid: UUID?): Boolean {
         val record = cache.getIfPresent(uid ?: return false) ?: return false
-        transaction(database) {
-            try {
-                PlayerProfiles.update ({ PlayerProfiles.uid eq record.uid.toString()}) {
-                    it[`class`] = record.heroClass
-                }
-            } catch (ex: Exception) {
-                instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
-            }
-        }
+        put(WClassesAPI.HeroObject(uid, record.heroClass))
         return true
     }
 
-    override fun put(`object`: WClassesAPI.HeroObject?): Boolean {
-        if(`object` == null)
+    override fun put(obj: WClassesAPI.HeroObject?): Boolean {
+        if(obj == null)
             return false
 
-        cache.put(`object`.uid, `object`);
+        cache.put(obj.uid, obj);
 
         transaction(database) {
             try {
-                PlayerProfiles.update ({ PlayerProfiles.uid eq `object`.uid.toString()}) {
-                    it[`class`] = `object`.heroClass
+                val ref = PlayerProfiles.select { PlayerProfiles.uid eq obj.uid.toString() }.firstOrNull()
+                when(ref == null) {
+                    true -> {
+                        PlayerProfiles.insert {
+                            it[uid] = obj.uid.toString()
+                            it[heroClass] = obj.heroClass
+                        }
+                    }
+                    false -> {
+                        PlayerProfiles.update ({ PlayerProfiles.uid eq obj.uid.toString()}) {
+                            it[heroClass] = obj.heroClass
+                        }
+                    }
                 }
             } catch (ex: Exception) {
                 instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
@@ -83,18 +90,18 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
 
     override fun putAll(): Boolean {
         val copy = cache.asMap();
-        //var result = true FIXME java.lang.NoClassDefFoundError: kotlin/jvm/internal/Ref$BooleanRef
         cache.invalidateAll()
-        copy.forEach { record ->
+
+        for (mutableEntry in copy) {
             transaction(database) {
                 try {
                     PlayerProfiles.update {
-                        it[PlayerProfiles.uid] = record.key.toString()
-                        it[`class`] = record.value.heroClass
+                        it[uid] = mutableEntry.key.toString()
+                        it[heroClass] = mutableEntry.value.heroClass
                     }
                 } catch (ex: Exception) {
                     instance.logger.severe("Failed to execute transaction: ${ex.javaClass.canonicalName}: ${ex.message}")
-                    //result = false
+                    return@transaction false
                 }
             }
         }
@@ -102,13 +109,30 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
         return true
     }
 
-    override fun getAll(): MutableList<WClassesAPI.HeroObject> {
-        return cache.asMap().entries.stream().map { it.value }.toList()
+    override fun getAll(): List<WClassesAPI.HeroObject> {
+        return transaction (database) {
+            return@transaction PlayerProfiles.selectAll().asSequence()
+                .filter {
+                    try {
+                        UUID.fromString(it[PlayerProfiles.uid])
+                        true
+                    } catch (ex: IllegalArgumentException) {
+                        false
+                    }
+                }.map {
+                    try {
+                        WClassesAPI.HeroObject(UUID.fromString(it[PlayerProfiles.uid]), it[PlayerProfiles.heroClass])
+                    } catch (ex: IndexOutOfBoundsException){
+                        WClassesAPI.HeroObject(UUID.fromString(it[PlayerProfiles.uid]), null)
+                    }
+                }.toList()
+        }
     }
 
     private object PlayerProfiles : Table("wcs_player_profiles") {
         val uid = varchar("uid", 36)
-        val `class` = enumeration("class", WClassesAPI.HeroObject.HeroClass::class)
+        val heroClass = enumeration("class", WClassesAPI.HeroObject.HeroClass::class).nullable()
+
         override val primaryKey = PrimaryKey(uid, name = "PK_wcs_player_profiles_uid")
     }
 }
