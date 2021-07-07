@@ -1,6 +1,6 @@
 package eu.warfaremc.wclasses.handler
 
-import eu.warfaremc.wclasses.WClassesAPI
+import eu.warfaremc.wclasses.api.WClassesAPI
 import eu.warfaremc.wclasses.api
 import eu.warfaremc.wclasses.extensions.format
 import eu.warfaremc.wclasses.instance

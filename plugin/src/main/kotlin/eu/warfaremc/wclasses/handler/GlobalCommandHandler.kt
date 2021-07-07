@@ -9,7 +9,7 @@ import cloud.commandframework.execution.AsynchronousCommandExecutionCoordinator
 import cloud.commandframework.meta.CommandMeta
 import cloud.commandframework.minecraft.extras.MinecraftHelp
 import cloud.commandframework.paper.PaperCommandManager
-import eu.warfaremc.wclasses.WClassesAPI
+import eu.warfaremc.wclasses.api.WClassesAPI
 import eu.warfaremc.wclasses.api
 import eu.warfaremc.wclasses.instance
 import eu.warfaremc.wclasses.logging.disableReporting
@@ -19,6 +19,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.jetbrains.annotations.NotNull
 import org.jetbrains.annotations.Nullable
+import java.util.*
 import java.util.function.Function
 
 class GlobalCommandHandler {
@@ -104,7 +105,7 @@ class GlobalCommandHandler {
     }
 
     @CommandMethod("wcs|wclasses info [target]")
-    @CommandDescription("Enables/disables debug mode")
+    @CommandDescription("Shows player information")
     @CommandPermission("wcs.admin")
     fun infoCommand(
         sender: Player,
@@ -112,7 +113,7 @@ class GlobalCommandHandler {
     ) {
         val player: Player = target ?: sender
 
-        api.get(player.uniqueId).ifPresent {
+        api.get(player.uniqueId).ifPresentOrElse( {
             sender.sendMessage("""
             §7############## Player info ################    
             §fName: §a${player.name}
@@ -120,7 +121,30 @@ class GlobalCommandHandler {
             §fHeroClass: §a${it.heroClass ?: "null" }
             §7###########################################  
         """.trimIndent())
-        }
+        }, {
+            sender.sendMessage("§fNo records found")
+        })
+    }
+
+    @CommandMethod("wcs|wclasses infoUID <uuid>")
+    @CommandDescription("Shows UUID information")
+    @CommandPermission("wcs.admin")
+    fun infoUIDCommand(
+        sender: Player,
+        @NotNull @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") uuid: String
+    ) {
+
+        api.get(UUID.fromString(uuid)).ifPresentOrElse( {
+            sender.sendMessage("""
+            §7############## UUID info ################    
+            §fName: §aN/A
+            §fUUID: §a${uuid}
+            §fHeroClass: §a${it.heroClass ?: "null" }
+            §7###########################################  
+        """.trimIndent())
+        }, {
+            sender.sendMessage("§fNo records found")
+        })
     }
 
     @CommandMethod("wcs|wclasses setClass <target> <class>")

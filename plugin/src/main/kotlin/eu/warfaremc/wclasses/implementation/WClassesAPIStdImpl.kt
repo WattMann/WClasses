@@ -3,7 +3,7 @@ package eu.warfaremc.wclasses.implementation
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 
-import eu.warfaremc.wclasses.WClassesAPI
+import eu.warfaremc.wclasses.api.WClassesAPI
 import eu.warfaremc.wclasses.database
 import eu.warfaremc.wclasses.instance
 

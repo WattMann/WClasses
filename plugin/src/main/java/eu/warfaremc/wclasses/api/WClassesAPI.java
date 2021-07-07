@@ -1,4 +1,4 @@
-package eu.warfaremc.wclasses;
+package eu.warfaremc.wclasses.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,5 +71,4 @@ public interface WClassesAPI {
             WARRIOR, ARCHER, SNIPER, PALADIN, NECROMANCER
         }
     }
-
 }

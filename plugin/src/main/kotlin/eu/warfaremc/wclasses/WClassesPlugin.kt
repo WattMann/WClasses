@@ -1,5 +1,6 @@
 package eu.warfaremc.wclasses
 
+import eu.warfaremc.wclasses.api.WClassesAPI
 import eu.warfaremc.wclasses.handler.GlobalCommandHandler
 import eu.warfaremc.wclasses.handler.GlobalEventHandler
 import eu.warfaremc.wclasses.implementation.WClassesAPIStdImpl
@@ -55,7 +56,6 @@ class WClassesPlugin : JavaPlugin() {
 
             finalize()
         })
-
     }
 
     private fun finalize() {
