@@ -1,9 +1,8 @@
 package eu.warfaremc.wclasses.handler
 
+import eu.warfaremc.wclasses.*
 import eu.warfaremc.wclasses.api.WClassesAPI
-import eu.warfaremc.wclasses.api
 import eu.warfaremc.wclasses.extensions.format
-import eu.warfaremc.wclasses.instance
 import eu.warfaremc.wclasses.logging.report
 
 import net.kyori.adventure.text.Component
@@ -19,11 +18,8 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
-import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.potion.PotionEffect
-import org.bukkit.potion.PotionEffectType
 
 class GlobalEventHandler : Listener {
     companion object {
@@ -55,43 +51,49 @@ class GlobalEventHandler : Listener {
 
             api.get(entity.uniqueId).ifPresent { receiver ->
                 if(receiver.heroClass == WClassesAPI.HeroObject.HeroClass.PALADIN) {
-                    report(source, "§7Calculated warrior dmg protection: §a${damage * 0.02}")
-                    damage -= damage * 0.03
+                    report(source, "§7Calculated warrior dmg protection: §a${damage * warrior_damage_protection}")
+                    damage -= damage * warrior_damage_protection
                 }
             }
 
             when (it.heroClass) {
                 WClassesAPI.HeroObject.HeroClass.WARRIOR -> {
-                    report(source , "§7Calculated warrior dmg change: §a${(damage * 0.03).format(2)}")
-                    damage += (damage * 0.03)
+                    if(damager is Projectile)
+                        return@ifPresent
+                    report(source , "§7Calculated warrior dmg change: §a${(damage * warrior_melee_damage).format(2)}")
+                    damage += (damage * warrior_melee_damage)
+                }
+                WClassesAPI.HeroObject.HeroClass.PALADIN -> {
+                    if(damager is Projectile)
+                        return@ifPresent
+                    if(Math.random() <= paladin_holysmite_chance) {
+                        report(source , "§7Calculated holy-smite dmg change from §a${(entity as LivingEntity).health.format(2)}§7HP -> §a${((entity as LivingEntity).health * paladin_holysmite_damage).format(2)}")
+                        damage += (entity as LivingEntity).health * paladin_holysmite_damage //TODO cfg
+                        source.sendActionBar(Component.text("§eHoly-smite §7aktivován!"))
+                        source.playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
+                    }
+                }
+                WClassesAPI.HeroObject.HeroClass.NECROMANCER -> {
+                    if(damager is Projectile)
+                        return@ifPresent
+                    if(Math.random() <= necromancer_healthsteal_chance && entity is Player) {
+                        val originalHp = (source as LivingEntity).health
+                        (source as LivingEntity).health = if((source as LivingEntity).health + 2 >= 20) 20.0 else (source as LivingEntity).health + necromancer_healthsteal_health
+                        source.sendActionBar(Component.text("§eHealth steal §7aktivován!"))
+                        source.playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
+                        report(source, "§7Health steal §e${originalHp.format(2)} §7-> §e ${(source as LivingEntity).health.format(2)}")
+                    }
                 }
                 WClassesAPI.HeroObject.HeroClass.ARCHER -> {
                     if(cause == EntityDamageEvent.DamageCause.PROJECTILE && source.inventory.itemInMainHand.type == Material.BOW) {  //TODO: Off-hand check
-                        report(source , "§7Calculated archer dmg change: §a${(damage * 0.1).format(2)}")
-                        damage += (damage * 0.05)
+                        report(source , "§7Calculated archer dmg change: §a${(damage * archer_projectile_damage_bonus).format(2)}")
+                        damage += (damage * archer_projectile_damage_bonus)
                     }
                 }
                 WClassesAPI.HeroObject.HeroClass.SNIPER -> {
                     if(cause == EntityDamageEvent.DamageCause.PROJECTILE && source.inventory.itemInMainHand.type == Material.CROSSBOW) {  //TODO: Off-hand check
-                        report(source , "§7Calculated crossbow dmg change: §a${(damage * 0.07).format(2)}")
-                        damage += (damage * 0.03)
-                    }
-                }
-                WClassesAPI.HeroObject.HeroClass.PALADIN -> {
-                    if(Math.random() <= 0.07) {
-                        report(source , "§7Calculated holy-smite dmg change from §a${(entity as LivingEntity).health.format(2)}§7HP -> §a${((entity as LivingEntity).health * 0.05).format(2)}")
-                        damage += (entity as LivingEntity).health * 0.05 //TODO cfg
-                        source.sendActionBar(Component.text("§eHoly-smite §7aktivován!"))
-                        (source ).playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
-                    }
-                }
-                WClassesAPI.HeroObject.HeroClass.NECROMANCER -> {
-                    if(Math.random() <= 0.15 && entity is Player) {
-                        val originalHp = (source as LivingEntity).health
-                        (source as LivingEntity).health = if((source as LivingEntity).health + 2 >= 20) 20.0 else (source as LivingEntity).health + 2
-                        source.sendActionBar(Component.text("§eHealth steal §7aktivován!"))
-                        source.playSound(source.location, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
-                        report(source, "§7Health steal §e${originalHp.format(2)} §7-> §e ${(source as LivingEntity).health.format(2)}")
+                        report(source , "§7Calculated crossbow dmg change: §a${(damage * sniper_projectile_damage_bonus).format(2)}")
+                        damage += (damage * sniper_projectile_damage_bonus)
                     }
                 }
                 null -> {
@@ -107,7 +109,7 @@ class GlobalEventHandler : Listener {
     fun PlayerJoinEvent.handle() {
         api.get(player.uniqueId).ifPresent {
             if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
-                player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, Int.MAX_VALUE, 0, false, false, false))
+                player.walkSpeed += passive_speed.toFloat()
         }
     }
 
@@ -115,16 +117,7 @@ class GlobalEventHandler : Listener {
     fun PlayerQuitEvent.handle() {
         api.get(player.uniqueId).ifPresent {
             if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
-                player.removePotionEffect(PotionEffectType.SPEED)
+                player.walkSpeed -= passive_speed.toFloat()
         }
-    }
-
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    fun PlayerItemConsumeEvent.handle() {
-        if(item.type == Material.MILK_BUCKET)
-            api.get(player.uniqueId).ifPresent {
-                if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
-                    Bukkit.getScheduler().runTaskLater(instance, Runnable { player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, Int.MAX_VALUE, 0, false, false, false)) }, 25)
-            }
     }
 }

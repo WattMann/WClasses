@@ -19,4 +19,4 @@ fun enableReporting(player: Player)
     = debuggers.add(player.uniqueId)
 
 fun disableReporting(player: Player)
-        = debuggers.add(player.uniqueId)
+    = debuggers.add(player.uniqueId)

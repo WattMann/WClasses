@@ -6,4 +6,21 @@ database:
   port: 3036
 
 bonuses:
-  warrior
+  passive_speed: 0.05f
+  warrior:
+    damage: 0.02
+    protection: 0.03
+  paladin:
+    holysmite:
+      damage: 0.05
+      chance: 0.07
+  necromancer:
+    healthsteal:
+      chance: 0.15
+      health: 2
+  archer:
+    projectile:
+      damage: 0.05
+  sniper:
+    projectile:
+      damage: 0.03

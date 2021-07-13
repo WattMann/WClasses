@@ -11,10 +11,14 @@ import cloud.commandframework.minecraft.extras.MinecraftHelp
 import cloud.commandframework.paper.PaperCommandManager
 import eu.warfaremc.wclasses.api.WClassesAPI
 import eu.warfaremc.wclasses.api
+import eu.warfaremc.wclasses.extensions.format
 import eu.warfaremc.wclasses.instance
 import eu.warfaremc.wclasses.logging.disableReporting
 import eu.warfaremc.wclasses.logging.enableReporting
+import eu.warfaremc.wclasses.logging.report
+import eu.warfaremc.wclasses.passive_speed
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
+import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.jetbrains.annotations.NotNull
@@ -31,7 +35,7 @@ class GlobalCommandHandler {
         lateinit var commandAnnotation: AnnotationParser<CommandSender>
 
         @Throws(java.lang.Exception::class)
-        fun init() {
+        fun make() {
             val executionCoordinatorFunction =
                 AsynchronousCommandExecutionCoordinator.newBuilder<CommandSender>()
                     .withSynchronousParsing()
@@ -131,13 +135,17 @@ class GlobalCommandHandler {
     @CommandPermission("wcs.admin")
     fun infoUIDCommand(
         sender: Player,
-        @NotNull @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") uuid: String
+        @Nullable @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") uuid: String?
     ) {
+        if(uuid == null) {
+            sender.sendMessage("Invalid UUID")
+            return
+        }
 
         api.get(UUID.fromString(uuid)).ifPresentOrElse( {
             sender.sendMessage("""
-            §7############## UUID info ################    
-            §fName: §aN/A
+            §7############## UUID info ##################
+            §fName: §a${Bukkit.getOfflinePlayer(UUID.fromString(uuid)).name ?: "N/A"}}
             §fUUID: §a${uuid}
             §fHeroClass: §a${it.heroClass ?: "null" }
             §7###########################################  
@@ -153,9 +161,31 @@ class GlobalCommandHandler {
     fun setClassCommand(
         sender: Player,
         @NotNull @Argument("target") target: Player,
-        @NotNull @Argument("class") `class`: String
+        @NotNull @Argument("class") targetClass: WClassesAPI.HeroObject.HeroClass
     ) {
-        if(api.put(WClassesAPI.HeroObject(target.uniqueId, WClassesAPI.HeroObject.HeroClass.valueOf(`class`))))
+        val original = api.get(target.uniqueId).ifPresent {
+            try {
+                // if changing from archer or paladin to other class removing passive speed
+                if((it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER
+                            || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
+                    && (targetClass != WClassesAPI.HeroObject.HeroClass.ARCHER
+                            || targetClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
+                    target.walkSpeed -= passive_speed.toFloat()
+                    report(sender, "Set walk of ${target.name} speed to ${target.walkSpeed}");
+                }
+                // if changing to archer or paladin from other class adding passive speed
+                if((targetClass == WClassesAPI.HeroObject.HeroClass.ARCHER
+                            || targetClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
+                    && (it.heroClass != WClassesAPI.HeroObject.HeroClass.ARCHER
+                            || it.heroClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
+                    target.walkSpeed += passive_speed.toFloat()
+                    report(sender, "Set walk of ${target.name} speed to ${target.walkSpeed.format(2)}");
+                }
+            } catch (ex: Exception) {
+                ex.printStackTrace()
+            }
+        }
+        if (api.put(WClassesAPI.HeroObject(target.uniqueId, targetClass)))
             sender.sendMessage("§fSuccess")
         else
             sender.sendMessage("§fFailed to update")
