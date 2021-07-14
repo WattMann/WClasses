@@ -3,7 +3,7 @@ Warfare Classes, plugin made for warfaremc.eu. Allows the usage of playable clas
 <br><br>
 Built for api-version `1.16`, paper `1.16.5`
 ## Commands
-`[optional argument] <required argument> |permission|`
+`[optional argument] <required argument>`
 - `wcs help (query)`  wcs.admin
 - `wcs reload` wcs.admin
 - `wcs debug [boolean]` wcs.admin
