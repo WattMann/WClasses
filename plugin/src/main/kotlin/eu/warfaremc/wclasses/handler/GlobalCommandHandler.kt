@@ -76,7 +76,7 @@ class GlobalCommandHandler {
     @CommandDescription("Shows help dialog")
     @CommandPermission("wcs.admin")
     fun commandHelp(
-        sender: Player
+        sender: CommandSender
     ) {
         commandHelp.queryCommands("", sender)
     }
@@ -85,7 +85,7 @@ class GlobalCommandHandler {
     @CommandDescription("Shows help dialog for specified query")
     @CommandPermission("wcs.admin")
     fun commandHelp(
-        sender: Player,
+        sender: CommandSender,
         @Nullable @Argument("query") @Greedy query: String?
     ) {
         commandHelp.queryCommands(query ?: "", sender)
@@ -95,7 +95,7 @@ class GlobalCommandHandler {
     @CommandDescription("Reloads the configuration")
     @CommandPermission("wcs.admin")
     fun reloadCommand(
-        sender: Player
+        sender: CommandSender
     ) {
         instance.reloadConfig()
         sender.sendMessage("§aDone")
@@ -119,20 +119,18 @@ class GlobalCommandHandler {
         }
     }
 
-    @CommandMethod("wcs|wclasses info [target]")
+    @CommandMethod("wcs|wclasses info <target>")
     @CommandDescription("Shows player information")
     @CommandPermission("wcs.admin")
     fun infoCommand(
-        sender: Player,
-        @Nullable @Argument("target" ) target: Player?
+        sender: CommandSender,
+        @NotNull @Argument("target" ) target: Player
     ) {
-        val player: Player = target ?: sender
-
-        api.get(player.uniqueId).ifPresentOrElse( {
+        api.get(target.uniqueId).ifPresentOrElse( {
             sender.sendMessage("""
             §7############## Player info ################    
-            §fName: §a${player.name}
-            §fUUID: §a${player.uniqueId}
+            §fName: §a${target.name}
+            §fUUID: §a${target.uniqueId}
             §fHeroClass: §a${it.heroClass ?: "null" }
             §7###########################################  
         """.trimIndent())
@@ -145,18 +143,13 @@ class GlobalCommandHandler {
     @CommandDescription("Shows UUID information")
     @CommandPermission("wcs.admin")
     fun infoUIDCommand(
-        sender: Player,
-        @Nullable @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") uuid: String?
+        sender: CommandSender,
+        @NotNull @Argument("uuid") @Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") uuid: String
     ) {
-        //FIXME
-        if(uuid == null) {
-            sender.sendMessage("Invalid UUID")
-            return
-        }
         api.get(UUID.fromString(uuid)).ifPresentOrElse( {
             sender.sendMessage("""
             §7############## UUID info ##################
-            §fName: §a${Bukkit.getOfflinePlayer(UUID.fromString(uuid)).name ?: "N/A"}}
+            §fName: §a${Bukkit.getOfflinePlayer(UUID.fromString(uuid)).name ?: "N/A"}
             §fUUID: §a${uuid}
             §fHeroClass: §a${it.heroClass ?: "null" }
             §7###########################################  
@@ -170,7 +163,7 @@ class GlobalCommandHandler {
     @CommandDescription("Sets player class")
     @CommandPermission("wcs.admin")
     fun setClassCommand(
-        sender: Player,
+        sender: CommandSender,
         @NotNull @Argument("target") target: Player,
         @NotNull @Argument("class") targetClass: WClassesAPI.HeroObject.HeroClass
     ) {
@@ -182,7 +175,7 @@ class GlobalCommandHandler {
                     && (targetClass != WClassesAPI.HeroObject.HeroClass.ARCHER
                             && targetClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
                     target.walkSpeed = 0.2f // Default value
-                    report(sender, "Reset walk speed of ${target.name} to ${target.walkSpeed.format(2)}")
+                    report(sender as Player, "Reset walk speed of ${target.name} to ${target.walkSpeed.format(2)}")
                 }
                 // if changing to archer or paladin from other class adding passive speed
                 if((targetClass == WClassesAPI.HeroObject.HeroClass.ARCHER
@@ -207,15 +200,10 @@ class GlobalCommandHandler {
     @CommandDescription("Shows UUID information")
     @CommandPermission("wcs.admin")
     fun setClassUIDCommand(
-        sender: Player,
-        @Nullable @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") target: String?,
+        sender: CommandSender,
+        @NotNull @Argument("uuid") @Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}") target: String,
         @NotNull @Argument("class") targetClass: WClassesAPI.HeroObject.HeroClass
     ) {
-        //FIXME
-        if(target == null) {
-            sender.sendMessage("Invalid UUID")
-            return
-        }
         Bukkit.getPlayer(target)?.let {
             setClassCommand(sender, it, targetClass)
         } ?: run {
