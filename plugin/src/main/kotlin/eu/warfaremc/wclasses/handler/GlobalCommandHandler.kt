@@ -91,6 +91,17 @@ class GlobalCommandHandler {
         commandHelp.queryCommands(query ?: "", sender)
     }
 
+    @CommandMethod("wcs|wclasses reload")
+    @CommandDescription("Reloads the configuration")
+    @CommandPermission("wcs.admin")
+    fun reloadCommand(
+        sender: Player
+    ) {
+        instance.reloadConfig()
+        sender.sendMessage("§aDone")
+    }
+
+
 
     @CommandMethod("wcs|wclasses debug [boolean]")
     @CommandDescription("Enables/disables debug mode")
@@ -137,11 +148,11 @@ class GlobalCommandHandler {
         sender: Player,
         @Nullable @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") uuid: String?
     ) {
+        //FIXME
         if(uuid == null) {
             sender.sendMessage("Invalid UUID")
             return
         }
-
         api.get(UUID.fromString(uuid)).ifPresentOrElse( {
             sender.sendMessage("""
             §7############## UUID info ##################
@@ -155,7 +166,7 @@ class GlobalCommandHandler {
         })
     }
 
-    @CommandMethod("wcs|wclasses setClass <target> <class>")
+    @CommandMethod("wcs|wclasses set <target> <class>")
     @CommandDescription("Sets player class")
     @CommandPermission("wcs.admin")
     fun setClassCommand(
@@ -163,32 +174,55 @@ class GlobalCommandHandler {
         @NotNull @Argument("target") target: Player,
         @NotNull @Argument("class") targetClass: WClassesAPI.HeroObject.HeroClass
     ) {
-        val original = api.get(target.uniqueId).ifPresent {
+         api.get(target.uniqueId).ifPresent {
             try {
                 // if changing from archer or paladin to other class removing passive speed
                 if((it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER
                             || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
                     && (targetClass != WClassesAPI.HeroObject.HeroClass.ARCHER
-                            || targetClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
-                    target.walkSpeed -= passive_speed.toFloat()
-                    report(sender, "Set walk of ${target.name} speed to ${target.walkSpeed}");
+                            && targetClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
+                    target.walkSpeed = 0.2f // Default value
+                    report(sender, "Reset walk speed of ${target.name} to ${target.walkSpeed.format(2)}")
                 }
                 // if changing to archer or paladin from other class adding passive speed
                 if((targetClass == WClassesAPI.HeroObject.HeroClass.ARCHER
                             || targetClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
                     && (it.heroClass != WClassesAPI.HeroObject.HeroClass.ARCHER
-                            || it.heroClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
+                            && it.heroClass != WClassesAPI.HeroObject.HeroClass.SNIPER)) {
                     target.walkSpeed += passive_speed.toFloat()
-                    report(sender, "Set walk of ${target.name} speed to ${target.walkSpeed.format(2)}");
+                    report(sender, "Set walk of ${target.name} speed to ${target.walkSpeed.format(2)}")
                 }
             } catch (ex: Exception) {
                 ex.printStackTrace()
             }
         }
         if (api.put(WClassesAPI.HeroObject(target.uniqueId, targetClass)))
-            sender.sendMessage("§fSuccess")
+            sender.sendMessage("§aDone")
         else
-            sender.sendMessage("§fFailed to update")
+            sender.sendMessage("§4Failed")
     }
 
+
+    @CommandMethod("wcs|wclasses setUID <uuid> <class>")
+    @CommandDescription("Shows UUID information")
+    @CommandPermission("wcs.admin")
+    fun setClassUIDCommand(
+        sender: Player,
+        @Nullable @Argument("uuid") @Regex("\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b") target: String?,
+        @NotNull @Argument("class") targetClass: WClassesAPI.HeroObject.HeroClass
+    ) {
+        //FIXME
+        if(target == null) {
+            sender.sendMessage("Invalid UUID")
+            return
+        }
+        Bukkit.getPlayer(target)?.let {
+            setClassCommand(sender, it, targetClass)
+        } ?: run {
+            if (api.put(WClassesAPI.HeroObject(UUID.fromString(target), targetClass)))
+                sender.sendMessage("§aDone")
+            else
+                sender.sendMessage("§4Failed");
+        }
+    }
 }

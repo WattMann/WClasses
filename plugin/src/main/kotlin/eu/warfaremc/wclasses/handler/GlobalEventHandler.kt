@@ -100,24 +100,17 @@ class GlobalEventHandler : Listener {
                     report(source, "NULL hero class")
                 }
             }
-
             report(source, "§7Damage §a${original.format(2)} §7-> §a${finalDamage.format(2)}")
         }
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     fun PlayerJoinEvent.handle() {
+        player.walkSpeed = 0.2f // Reset walk speed
         api.get(player.uniqueId).ifPresent {
-            if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
-                player.walkSpeed += passive_speed.toFloat()
-        }
-    }
-
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    fun PlayerQuitEvent.handle() {
-        api.get(player.uniqueId).ifPresent {
-            if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER)
-                player.walkSpeed -= passive_speed.toFloat()
+            if (it.heroClass == WClassesAPI.HeroObject.HeroClass.ARCHER || it.heroClass == WClassesAPI.HeroObject.HeroClass.SNIPER) {
+                player.walkSpeed += passive_speed.toFloat() // Apply bonus
+            }
         }
     }
 }

@@ -54,8 +54,7 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
 
     override fun put(uid: UUID?): Boolean {
         val record = cache.getIfPresent(uid ?: return false) ?: return false
-        put(WClassesAPI.HeroObject(uid, record.heroClass))
-        return true
+        return put(WClassesAPI.HeroObject(uid, record.heroClass))
     }
 
     override fun put(obj: WClassesAPI.HeroObject?): Boolean {
@@ -64,7 +63,7 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
 
         cache.put(obj.uid, obj);
 
-        transaction(database) {
+        return transaction(database) {
             try {
                 val ref = PlayerProfiles.select { PlayerProfiles.uid eq obj.uid.toString() }.firstOrNull()
                 when(ref == null) {
@@ -73,11 +72,13 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
                             it[uid] = obj.uid.toString()
                             it[heroClass] = obj.heroClass
                         }
+                        return@transaction true
                     }
                     false -> {
                         PlayerProfiles.update ({ PlayerProfiles.uid eq obj.uid.toString()}) {
                             it[heroClass] = obj.heroClass
                         }
+                        return@transaction true
                     }
                 }
             } catch (ex: Exception) {
@@ -85,7 +86,6 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
                 return@transaction false
             }
         }
-        return true
     }
 
     override fun putAll(): Boolean {
@@ -105,7 +105,6 @@ class WClassesAPIStdImpl(database: Database) : WClassesAPI {
                 }
             }
         }
-
         return true
     }
 

@@ -62,8 +62,8 @@ public interface WClassesAPI {
         @Override
         public String toString() {
             return "HeroObject{" +
-                    "uid=" + uid +
-                    ", heroClass=" + heroClass +
+                    "uid=" + uid + "," +
+                    " heroClass=" + heroClass +
                     '}';
         }
 
