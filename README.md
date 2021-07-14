@@ -29,7 +29,8 @@ Built for api-version `1.16`, paper `1.16.5`
 # Database credentials  
 database:  
   driver: "com.mysql.cj.jdbc.Driver"  
-  server: "127.0.0.1"  
+  server: "127.0.0.1"
+  database: "minecraft"
   user: "root"  
   password: "root"  
   port: 3036  

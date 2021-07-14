@@ -8,6 +8,7 @@
 database:
   driver: "com.mysql.cj.jdbc.Driver"
   server: "127.0.0.1"
+  database: "minecraft"
   user: "root"
   password: "root"
   port: 3036
